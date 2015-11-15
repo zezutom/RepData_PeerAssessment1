@@ -84,12 +84,13 @@ dev.off()
 
 
 ## What is the average daily activity pattern?
+I start off by following the instructions and calculate average steps across all days.
 ```r
-# Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, 
-# averaged across all days (y-axis)
-
 avg_steps <- aggregate(list(steps = activity$steps), list(interval = activity$interval), mean, na.rm = TRUE)
-
+```
+I use the calculated data set as a base for a time series. X-axis displays intervals of five minutes, whereas
+y-axis shows average number of steps. Further, I identify the peak point in graph, highlight it and display a value of the found maximum as a legend.
+```r
 png("plot2.png")
 with(avg_steps, {
   
@@ -114,7 +115,9 @@ with(avg_steps, {
                         max_steps$interval),
                   text.col = max_step_col, cex = .9, bty = 'n')
 })
-
+```
+Finally, I render the graphics.
+```r
 # Render the graphics
 dev.off()
 ```
