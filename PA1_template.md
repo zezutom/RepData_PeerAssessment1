@@ -7,12 +7,12 @@ output:
 
 
 ## Loading and preprocessing the data
+First of all, I load data from the csv file.
 ```r
-## Load the data (i.e. read.csv())
 activity <- read.csv("activity.csv")
-
-## Process/transform the data (if necessary) into a format suitable for your analysis
-
+```
+Next, I ensure the data is valid. Below is a helper method dealing with numeric input. Any non-numeric entries are flagged as invalid (NA).
+```r
 # Converts a provided vector into a numeric one
 as_numbers <- function(v) {
   v <- as.numeric(v)
@@ -20,30 +20,39 @@ as_numbers <- function(v) {
   # Flag all non-missing non-numeric values as missing
   v[is.nan(v)] <- NA  
 }
-
+```
+Steps and intervals are transformed into numeric vectors.
+```r
 # Treat steps as numeric values
 as_numbers(activity$steps)
 
 # Treat intervals as numeric values
 as_numbers(activity$interval)
-
+```
+Textual date representations are turned into date objects, YYYY-MM-DD format is assumed. 
+```r
 # Convert cells of the 'date' column into date values in YYYY-MM-DD format
 activity$date <- as.Date(activity$date, "%Y-%m-%d")
 ```
 
 
 ## What is mean total number of steps taken per day?
+I start with summarizing daily total steps, missing values are skipped.
 ```r
 # Summarize daily total steps, skip missing values
 total_steps <- aggregate(list(steps = activity$steps), list(date = activity$date), sum, na.rm = TRUE)
-
+```
+In the next step, I plot the summary as a histogram.
+```r
 # Render a histogram of daily total steps
 png("plot1.png")
 hist(total_steps$steps, 
      breaks = 20, 
      main = "Mean Total Number of Steps Taken per Day",
      xlab = "Total Number of Steps Taken per Day")
-
+```
+Next, I calculate mean and median and add them as vertical lines to the histogram. 
+```r
 # Additional aggregations along with visualization info
 activity_stats <- data.frame(
   val = c(
@@ -56,14 +65,18 @@ activity_stats <- data.frame(
 apply(activity_stats, 1, function(x) {
   abline(v=x["val"], lwd = 2, col = x["col"])
 })
-
+```
+Next, I add a legend to show mean and median values.
+```r
 # Add a legend
 legend('topright', lty = 1, lwd = 3, col = as.character(activity_stats$col),
        cex = .8,
        legend = apply(activity_stats, 1, function(x) {
          paste(x["lbl"], ": ", x["val"])
        }))
-
+```
+Finally, I render the graphics.
+```r
 # Render the graphics
 dev.off()
 ```
@@ -71,12 +84,13 @@ dev.off()
 
 
 ## What is the average daily activity pattern?
+I start off by following the instructions and calculate average steps across all days.
 ```r
-# Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, 
-# averaged across all days (y-axis)
-
 avg_steps <- aggregate(list(steps = activity$steps), list(interval = activity$interval), mean, na.rm = TRUE)
-
+```
+I use the calculated data set as a base for a time series. X-axis displays intervals of five minutes, whereas
+y-axis shows average number of steps. Further, I identify the peak point in graph, highlight it and display a value of the found maximum as a legend.
+```r
 png("plot2.png")
 with(avg_steps, {
   
@@ -101,41 +115,35 @@ with(avg_steps, {
                         max_steps$interval),
                   text.col = max_step_col, cex = .9, bty = 'n')
 })
-
+```
+Finally, I render the graphics.
+```r
 # Render the graphics
 dev.off()
 ```
 ![Average Daily Activity Pattern](plot2.png)
 
 ## Imputing missing values
+As requested I calculate the total number of missing steps and print it to console.
 ```r
-## Task 3a: Calculate and report the total number of missing values 
-## in the dataset (i.e. the total number of rows with NAs)
 missing_steps <- nrow(activity[is.na(activity$steps),])
 print(paste("There are", missing_steps, "missing steps in total"))
+```
+Output: [1] "There are 2304 missing steps in total"
 
-## Task 3b: Devise a strategy for filling in all of the missing values 
-## in the dataset. The strategy does not need to be sophisticated. 
-## For example, you could use the mean/median for that day, 
-## or the mean for that 5-minute interval, etc.
+Next, I deal with filling in all of the missing values to find out if / how that affects plotted results. I choose to replace missing values with average steps in the respective day.
 
-# Chosen strategy: Missing values will be replaced with mean values
-# calculated in the previous step
-
-## Task 3c: Create a new dataset that is equal to the original dataset 
-## but with the missing data filled in.
+In the next step, I create a new dataset off the original. This time however, I include a filler for missing values.
+```r
 complete_activity <- activity
 complete_activity$steps = mapply(function(x, y) {
   if (is.na(x)) { return (y) }
   else return (x)
 }, complete_activity$steps, avg_steps$steps)
 total_steps_complete <- aggregate(steps ~ date, complete_activity, sum)
-
-## Task 3d: Make a histogram of the total number of steps taken each day 
-## and Calculate and report the mean and median total number of steps taken per day. 
-## Do these values differ from the estimates from the first part of the assignment? 
-## What is the impact of imputing missing data on the estimates of the total daily number of steps?
-
+```
+Next, I plot the same histogram as in the first task of this assignment to see the effect of having included averaged substitutes for missing values. Indeed, there is a change. Mean and median now overlap, which makes sense considering the chosen way of substitution.
+```r
 # A histogram of the total number of steps taken each day
 png("plot3.png")
 hist(total_steps_complete$steps, 
@@ -162,24 +170,31 @@ legend('topright', lty = 1, lwd = 3, col = as.character(activity_stats$col),
        legend = apply(activity_stats, 1, function(x) {
          paste(x["lbl"], ": ", x["val"])
        }))
-
+```
+Once again, I render the updated histogram.
+```r
 # Render the graphics
 dev.off()
 ```
 ![Mean Total Number of Steps Taken per Day](plot3.png)
 
 ## Are there differences in activity patterns between weekdays and weekends?
+To find out about differences between weekdays and weekends I enhance the dataset with an additional column indicating whether the respective day falls on a weekend or not.
 ```r
 # Add a new column to keep the 'day type' (a weekday or a weekend)
 complete_activity$daytype = ifelse(
   weekdays(complete_activity$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
-
+```
+Next, I group data by the new column (day type) and interval. That gives me two distinct datasets ready to be visualized.
+```r
 # Group by day type and interval
 total_steps_by_daytype <- aggregate(
   list(steps = complete_activity$steps), 
   list(interval = complete_activity$interval, daytype = complete_activity$daytype), 
   mean, na.rm = TRUE)
-
+```
+Finally, I plot the results to see that the user have been unsuprisingly somewhat more active over the weekends, even though there is a one-time peak in total weekday steps.
+```r
 # Plot it
 png("plot4.png")
 avg_steps_by_daytype <- ggplot(total_steps_by_daytype, aes(interval, steps)) +

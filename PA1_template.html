@@ -203,42 +203,58 @@ hr {
 <body>
 <h2>Loading and preprocessing the data</h2>
 
-<pre><code class="r">## Load the data (i.e. read.csv())
-activity &lt;- read.csv(&quot;activity.csv&quot;)
+<p>First of all, I load data from the csv file.</p>
 
-## Process/transform the data (if necessary) into a format suitable for your analysis
+<pre><code class="r">activity &lt;- read.csv(&quot;activity.csv&quot;)
+</code></pre>
 
-# Converts a provided vector into a numeric one
+<p>Next, I ensure the data is valid. Below is a helper method dealing with numeric input. Any non-numeric entries are flagged as invalid (NA).</p>
+
+<pre><code class="r"># Converts a provided vector into a numeric one
 as_numbers &lt;- function(v) {
   v &lt;- as.numeric(v)
 
   # Flag all non-missing non-numeric values as missing
   v[is.nan(v)] &lt;- NA  
 }
+</code></pre>
 
-# Treat steps as numeric values
+<p>Steps and intervals are transformed into numeric vectors.</p>
+
+<pre><code class="r"># Treat steps as numeric values
 as_numbers(activity$steps)
 
 # Treat intervals as numeric values
 as_numbers(activity$interval)
+</code></pre>
 
-# Convert cells of the &#39;date&#39; column into date values in YYYY-MM-DD format
+<p>Textual date representations are turned into date objects, YYYY-MM-DD format is assumed. </p>
+
+<pre><code class="r"># Convert cells of the &#39;date&#39; column into date values in YYYY-MM-DD format
 activity$date &lt;- as.Date(activity$date, &quot;%Y-%m-%d&quot;)
 </code></pre>
 
 <h2>What is mean total number of steps taken per day?</h2>
 
+<p>I start with summarizing daily total steps, missing values are skipped.</p>
+
 <pre><code class="r"># Summarize daily total steps, skip missing values
 total_steps &lt;- aggregate(list(steps = activity$steps), list(date = activity$date), sum, na.rm = TRUE)
+</code></pre>
 
-# Render a histogram of daily total steps
+<p>In the next step, I plot the summary as a histogram.</p>
+
+<pre><code class="r"># Render a histogram of daily total steps
 png(&quot;plot1.png&quot;)
 hist(total_steps$steps, 
      breaks = 20, 
      main = &quot;Mean Total Number of Steps Taken per Day&quot;,
      xlab = &quot;Total Number of Steps Taken per Day&quot;)
+</code></pre>
 
-# Additional aggregations along with visualization info
+<p>Next, I calculate mean and median and add them as vertical lines to the histogram. </p>
+
+<pre><code class="r"># Additional aggregations along with visualization info
 activity_stats &lt;- data.frame(
   val = c(
     round(mean(total_steps$steps)), 
@@ -250,15 +266,21 @@ activity_stats &lt;- data.frame(
 apply(activity_stats, 1, function(x) {
   abline(v=x[&quot;val&quot;], lwd = 2, col = x[&quot;col&quot;])
 })
+</code></pre>
 
-# Add a legend
+<p>Next, I add a legend to show mean and median values.</p>
+
+<pre><code class="r"># Add a legend
 legend(&#39;topright&#39;, lty = 1, lwd = 3, col = as.character(activity_stats$col),
        cex = .8,
        legend = apply(activity_stats, 1, function(x) {
          paste(x[&quot;lbl&quot;], &quot;: &quot;, x[&quot;val&quot;])
        }))
+</code></pre>
 
-# Render the graphics
+<p>Finally, I render the graphics.</p>
+
+<pre><code class="r"># Render the graphics
 dev.off()
 </code></pre>
 
@@ -266,12 +288,15 @@ dev.off()
 
 <h2>What is the average daily activity pattern?</h2>
 
-<pre><code class="r"># Make a time series plot (i.e. type = &quot;l&quot;) of the 5-minute interval (x-axis) and the average number of steps taken, 
-# averaged across all days (y-axis)
+<p>I start off by following the instructions and calculate average steps across all days.</p>
 
-avg_steps &lt;- aggregate(list(steps = activity$steps), list(interval = activity$interval), mean, na.rm = TRUE)
+<pre><code class="r">avg_steps &lt;- aggregate(list(steps = activity$steps), list(interval = activity$interval), mean, na.rm = TRUE)
+</code></pre>
 
-png(&quot;plot2.png&quot;)
+<p>I use the calculated data set as a base for a time series. X-axis displays intervals of five minutes, whereas
+y-axis shows average number of steps. Further, I identify the peak point in graph, highlight it and display a value of the found maximum as a legend.</p>
+
+<pre><code class="r">png(&quot;plot2.png&quot;)
 with(avg_steps, {
 
   # Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
@@ -295,8 +320,11 @@ with(avg_steps, {
                         max_steps$interval),
                   text.col = max_step_col, cex = .9, bty = &#39;n&#39;)
 })
+</code></pre>
 
-# Render the graphics
+<p>Finally, I render the graphics.</p>
+
+<pre><code class="r"># Render the graphics
 dev.off()
 </code></pre>
 
@@ -304,34 +332,29 @@ dev.off()
 
 <h2>Imputing missing values</h2>
 
-<pre><code class="r">## Task 3a: Calculate and report the total number of missing values 
-## in the dataset (i.e. the total number of rows with NAs)
-missing_steps &lt;- nrow(activity[is.na(activity$steps),])
+<p>As requested I calculate the total number of missing steps and print it to console.</p>
+
+<pre><code class="r">missing_steps &lt;- nrow(activity[is.na(activity$steps),])
 print(paste(&quot;There are&quot;, missing_steps, &quot;missing steps in total&quot;))
+</code></pre>
 
-## Task 3b: Devise a strategy for filling in all of the missing values 
-## in the dataset. The strategy does not need to be sophisticated. 
-## For example, you could use the mean/median for that day, 
-## or the mean for that 5-minute interval, etc.
+<p>Output: [1] &ldquo;There are 2304 missing steps in total&rdquo;</p>
 
-# Chosen strategy: Missing values will be replaced with mean values
-# calculated in the previous step
+<p>Next, I deal with filling in all of the missing values to find out if / how that affects plotted results. I choose to replace missing values with average steps in the respective day.</p>
 
-## Task 3c: Create a new dataset that is equal to the original dataset 
-## but with the missing data filled in.
-complete_activity &lt;- activity
+<p>In the next step, I create a new dataset off the original. This time however, I include a filler for missing values.</p>
+
+<pre><code class="r">complete_activity &lt;- activity
 complete_activity$steps = mapply(function(x, y) {
   if (is.na(x)) { return (y) }
   else return (x)
 }, complete_activity$steps, avg_steps$steps)
 total_steps_complete &lt;- aggregate(steps ~ date, complete_activity, sum)
+</code></pre>
 
-## Task 3d: Make a histogram of the total number of steps taken each day 
-## and Calculate and report the mean and median total number of steps taken per day. 
-## Do these values differ from the estimates from the first part of the assignment? 
-## What is the impact of imputing missing data on the estimates of the total daily number of steps?
+<p>Next, I plot the same histogram as in the first task of this assignment to see the effect of having included averaged substitutes for missing values. Indeed, there is a change. Mean and median now overlap, which makes sense considering the chosen way of substitution.</p>
 
-# A histogram of the total number of steps taken each day
+<pre><code class="r"># A histogram of the total number of steps taken each day
 png(&quot;plot3.png&quot;)
 hist(total_steps_complete$steps, 
      breaks = 20, 
@@ -357,8 +380,11 @@ legend(&#39;topright&#39;, lty = 1, lwd = 3, col = as.character(activity_stats$c
        legend = apply(activity_stats, 1, function(x) {
          paste(x[&quot;lbl&quot;], &quot;: &quot;, x[&quot;val&quot;])
        }))
+</code></pre>
 
-# Render the graphics
+<p>Once again, I render the updated histogram.</p>
+
+<pre><code class="r"># Render the graphics
 dev.off()
 </code></pre>
 
@@ -366,17 +392,25 @@ dev.off()
 
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
 
+<p>To find out about differences between weekdays and weekends I enhance the dataset with an additional column indicating whether the respective day falls on a weekend or not.</p>
+
 <pre><code class="r"># Add a new column to keep the &#39;day type&#39; (a weekday or a weekend)
 complete_activity$daytype = ifelse(
   weekdays(complete_activity$date) %in% c(&quot;Saturday&quot;, &quot;Sunday&quot;), &quot;Weekend&quot;, &quot;Weekday&quot;)
+</code></pre>
 
-# Group by day type and interval
+<p>Next, I group data by the new column (day type) and interval. That gives me two distinct datasets ready to be visualized.</p>
+
+<pre><code class="r"># Group by day type and interval
 total_steps_by_daytype &lt;- aggregate(
   list(steps = complete_activity$steps), 
   list(interval = complete_activity$interval, daytype = complete_activity$daytype), 
   mean, na.rm = TRUE)
+</code></pre>
 
-# Plot it
+<p>Finally, I plot the results to see that the user have been unsuprisingly somewhat more active over the weekends, even though there is a one-time peak in total weekday steps.</p>
+
+<pre><code class="r"># Plot it
 png(&quot;plot4.png&quot;)
 avg_steps_by_daytype &lt;- ggplot(total_steps_by_daytype, aes(interval, steps)) +
   ggtitle(&quot;Activity Patterns - Weekdays vs Weekends&quot;) +
