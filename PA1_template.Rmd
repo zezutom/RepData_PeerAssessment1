@@ -124,34 +124,26 @@ dev.off()
 ![Average Daily Activity Pattern](plot2.png)
 
 ## Imputing missing values
+As requested I calculate the total number of missing steps and print it to console.
 ```r
-## Task 3a: Calculate and report the total number of missing values 
-## in the dataset (i.e. the total number of rows with NAs)
 missing_steps <- nrow(activity[is.na(activity$steps),])
 print(paste("There are", missing_steps, "missing steps in total"))
+```
+Output: [1] "There are 2304 missing steps in total"
 
-## Task 3b: Devise a strategy for filling in all of the missing values 
-## in the dataset. The strategy does not need to be sophisticated. 
-## For example, you could use the mean/median for that day, 
-## or the mean for that 5-minute interval, etc.
+Next, I deal with filling in all of the missing values to find out if / how that affects plotted results. I choose to replace missing values with average steps in the respective day.
 
-# Chosen strategy: Missing values will be replaced with mean values
-# calculated in the previous step
-
-## Task 3c: Create a new dataset that is equal to the original dataset 
-## but with the missing data filled in.
+In the next step, I create a new dataset off the original. This time however, I include a filler for missing values.
+```r
 complete_activity <- activity
 complete_activity$steps = mapply(function(x, y) {
   if (is.na(x)) { return (y) }
   else return (x)
 }, complete_activity$steps, avg_steps$steps)
 total_steps_complete <- aggregate(steps ~ date, complete_activity, sum)
-
-## Task 3d: Make a histogram of the total number of steps taken each day 
-## and Calculate and report the mean and median total number of steps taken per day. 
-## Do these values differ from the estimates from the first part of the assignment? 
-## What is the impact of imputing missing data on the estimates of the total daily number of steps?
-
+```
+Next, I plot the same histogram as in the first task of the assignment to see the effect of having included averaged substitutes for missing values. Indeed, there is a change. Mean and median now overlap, which makes sense considering the chosen way of substitution.
+```r
 # A histogram of the total number of steps taken each day
 png("plot3.png")
 hist(total_steps_complete$steps, 
@@ -178,7 +170,9 @@ legend('topright', lty = 1, lwd = 3, col = as.character(activity_stats$col),
        legend = apply(activity_stats, 1, function(x) {
          paste(x["lbl"], ": ", x["val"])
        }))
-
+```
+Once again, I render the updated histogram.
+```r
 # Render the graphics
 dev.off()
 ```
