@@ -7,12 +7,12 @@ output:
 
 
 ## Loading and preprocessing the data
+First of all, I load data from the csv file.
 ```r
-## Load the data (i.e. read.csv())
 activity <- read.csv("activity.csv")
-
-## Process/transform the data (if necessary) into a format suitable for your analysis
-
+```
+Next, I ensure the data is valid. Below is a helper method dealing with numeric input. Any non-numeric entries are flagged as invalid (NA).
+```r
 # Converts a provided vector into a numeric one
 as_numbers <- function(v) {
   v <- as.numeric(v)
@@ -20,30 +20,39 @@ as_numbers <- function(v) {
   # Flag all non-missing non-numeric values as missing
   v[is.nan(v)] <- NA  
 }
-
+```
+Steps and intervals are transformed into numeric vectors.
+```r
 # Treat steps as numeric values
 as_numbers(activity$steps)
 
 # Treat intervals as numeric values
 as_numbers(activity$interval)
-
+```
+Textual date representations are turned into date objects, YYYY-MM-DD format is assumed. 
+```r
 # Convert cells of the 'date' column into date values in YYYY-MM-DD format
 activity$date <- as.Date(activity$date, "%Y-%m-%d")
 ```
 
 
 ## What is mean total number of steps taken per day?
+I start with summarizing daily total steps, missing values are skipped.
 ```r
 # Summarize daily total steps, skip missing values
 total_steps <- aggregate(list(steps = activity$steps), list(date = activity$date), sum, na.rm = TRUE)
-
+```
+In the next step, I plot the summary as a histogram.
+```r
 # Render a histogram of daily total steps
 png("plot1.png")
 hist(total_steps$steps, 
      breaks = 20, 
      main = "Mean Total Number of Steps Taken per Day",
      xlab = "Total Number of Steps Taken per Day")
-
+```
+Next, I calculate mean and median and add them as vertical lines to the histogram. 
+```r
 # Additional aggregations along with visualization info
 activity_stats <- data.frame(
   val = c(
@@ -56,14 +65,18 @@ activity_stats <- data.frame(
 apply(activity_stats, 1, function(x) {
   abline(v=x["val"], lwd = 2, col = x["col"])
 })
-
+```
+Next, I add a legend to show mean and median values.
+```r
 # Add a legend
 legend('topright', lty = 1, lwd = 3, col = as.character(activity_stats$col),
        cex = .8,
        legend = apply(activity_stats, 1, function(x) {
          paste(x["lbl"], ": ", x["val"])
        }))
-
+```
+Finally, I render the graphics.
+```r
 # Render the graphics
 dev.off()
 ```
