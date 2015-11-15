@@ -193,7 +193,7 @@ total_steps_by_daytype <- aggregate(
   list(interval = complete_activity$interval, daytype = complete_activity$daytype), 
   mean, na.rm = TRUE)
 ```
-Finally, I plot the results to see that weekdays have been unsuprisingly somewhat bussier.
+Finally, I plot the results to see that the user have been unsuprisingly somewhat more active over the weekends, even though there is a one-time peak in total weekday steps.
 ```r
 # Plot it
 png("plot4.png")
