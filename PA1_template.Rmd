@@ -142,7 +142,7 @@ complete_activity$steps = mapply(function(x, y) {
 }, complete_activity$steps, avg_steps$steps)
 total_steps_complete <- aggregate(steps ~ date, complete_activity, sum)
 ```
-Next, I plot the same histogram as in the first task of the assignment to see the effect of having included averaged substitutes for missing values. Indeed, there is a change. Mean and median now overlap, which makes sense considering the chosen way of substitution.
+Next, I plot the same histogram as in the first task of this assignment to see the effect of having included averaged substitutes for missing values. Indeed, there is a change. Mean and median now overlap, which makes sense considering the chosen way of substitution.
 ```r
 # A histogram of the total number of steps taken each day
 png("plot3.png")
@@ -179,17 +179,22 @@ dev.off()
 ![Mean Total Number of Steps Taken per Day](plot3.png)
 
 ## Are there differences in activity patterns between weekdays and weekends?
+To find out about differences between weekdays and weekends I enhance the dataset with an additional column indicating whether the respective day falls on a weekend or not.
 ```r
 # Add a new column to keep the 'day type' (a weekday or a weekend)
 complete_activity$daytype = ifelse(
   weekdays(complete_activity$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
-
+```
+Next, I group data by the new column (day type) and interval. That gives me two distinct datasets ready to be visualized.
+```r
 # Group by day type and interval
 total_steps_by_daytype <- aggregate(
   list(steps = complete_activity$steps), 
   list(interval = complete_activity$interval, daytype = complete_activity$daytype), 
   mean, na.rm = TRUE)
-
+```
+Finally, I plot the results to see that weekdays have been unsuprisingly somewhat bussier.
+```r
 # Plot it
 png("plot4.png")
 avg_steps_by_daytype <- ggplot(total_steps_by_daytype, aes(interval, steps)) +
